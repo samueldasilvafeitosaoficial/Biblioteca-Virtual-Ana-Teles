@@ -1,0 +1,22 @@
+{
+  "name": "biblioteca-virtual-ana-teles",
+  "version": "1.0.0",
+  "description": "Aplicativo Android da Biblioteca Virtual Ana Teles.",
+  "scripts": {
+    "android:init": "cap add android",
+    "browser:prepare": "node build_android.mjs",
+    "android:prepare": "npm run browser:prepare",
+    "android:apk": "npm run android:prepare && cap sync android && cd android && gradlew.bat assembleDebug"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2"
+  }
+}

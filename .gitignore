@@ -1,0 +1,8 @@
+.env
+__pycache__/
+biblioteca.db
+node_modules/
+www/
+android/.gradle/
+android/local.properties
+android/app/build/

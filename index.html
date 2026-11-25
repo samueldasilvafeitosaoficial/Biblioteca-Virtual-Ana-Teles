@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biblioteca Virtual Ana Teles — Protótipo Interativo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#059669">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    window.SUPABASE_URL = "https://nxcnsquiuapwsjvxsosq.supabase.co";
+    window.SUPABASE_ANON_KEY = "sb_publishable_qBkhjVTE27Onf0rq99oEJg_Y_ZqdgmT";
+  </script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            sketch: ['"Patrick Hand"', 'cursive']
+          },
+          colors: {
+            emeraldBrand: {
+              50: '#ECFDF5',
+              100: '#D1FAE5',
+              500: '#10B981',
+              600: '#059669',
+              700: '#047857'
+            },
+            indigoBrand: {
+              800: '#1E40AF',
+              900: '#1E3A8A'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-800 min-h-screen flex items-center justify-center p-0 sm:p-6 selection:bg-emerald-200 selection:text-emerald-900">
+
+  <!-- MOLDURA DE SMARTPHONE REALISTA CENTRALIZADA (390x844px RESPONSIVO) -->
+  <main class="flex items-center justify-center w-full max-w-[410px]">
+    <div id="phoneFrame" class="relative w-full max-w-[390px] h-[812px] sm:h-[844px] bg-slate-950 rounded-[48px] p-3 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.75)] border-[3px] border-slate-700/90 flex flex-col overflow-hidden">
+      
+      <!-- Botões físicos laterais decorativos -->
+      <div class="hidden sm:block absolute -left-[5px] top-28 w-[3px] h-10 bg-slate-600 rounded-l"></div>
+      <div class="hidden sm:block absolute -left-[5px] top-44 w-[3px] h-14 bg-slate-600 rounded-l"></div>
+      <div class="hidden sm:block absolute -left-[5px] top-60 w-[3px] h-14 bg-slate-600 rounded-l"></div>
+      <div class="hidden sm:block absolute -right-[5px] top-44 w-[3px] h-20 bg-slate-600 rounded-r"></div>
+
+      <!-- Tela Interna do Smartphone -->
+      <div id="phoneInner" class="phone-screen-bg relative w-full h-full bg-[#F8FAFC] rounded-[38px] overflow-hidden flex flex-col">
+        
+        <!-- BARRA DE STATUS SUPERIOR ("9:00", Notch, "VoLTE 4G", Bateria) -->
+        <header class="relative z-30 h-11 px-6 pt-2 pb-1 flex items-center justify-between text-[12px] font-bold text-slate-800 select-none shrink-0">
+          <span id="statusBarTime">9:00</span>
+          
+          <!-- Entalhe / Câmera Frontal -->
+          <div class="w-24 h-5 bg-slate-950 rounded-full flex items-center justify-end px-2.5 shadow-inner">
+            <span class="w-2.5 h-2.5 rounded-full bg-slate-800 border border-slate-700"></span>
+          </div>
+
+          <!-- Ícones de Rede VoLTE 4G e Bateria -->
+          <div class="flex items-center gap-1.5 text-[10px] font-extrabold tracking-tight">
+            <div class="flex flex-col leading-[8px] text-right">
+              <span>VoLTE</span>
+              <span class="text-[9px] text-emerald-600">4G</span>
+            </div>
+            <!-- Sinal -->
+            <svg class="w-3.5 h-3.5 text-slate-800" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="2" y="16" width="3" height="6" rx="1"/>
+              <rect x="7" y="12" width="3" height="10" rx="1"/>
+              <rect x="12" y="8" width="3" height="14" rx="1"/>
+              <rect x="17" y="4" width="3" height="18" rx="1"/>
+            </svg>
+            <!-- Bateria -->
+            <div class="flex items-center">
+              <div class="w-5 h-2.5 border-[1.5px] border-slate-800 rounded-[3px] p-[1px] flex items-center">
+                <div class="w-full h-full bg-slate-800 rounded-[1px]"></div>
+              </div>
+              <div class="w-[2px] h-1 bg-slate-800 rounded-r-sm ml-[1px]"></div>
+            </div>
+          </div>
+        </header>
+
+        <!-- TOAST DE NOTIFICAÇÃO INTERNA (Substitui alert()) -->
+        <div id="phoneToast" class="pointer-events-none absolute top-14 left-4 right-4 z-50 transition-all duration-300 opacity-0 -translate-y-3">
+          <div class="bg-slate-900/95 text-white text-xs font-medium px-3.5 py-2.5 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-2.5">
+            <span id="toastIcon" class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">✓</span>
+            <span id="toastMessage" class="leading-snug">Ação realizada com sucesso!</span>
+          </div>
+        </div>
+
+        <!-- MENU LATERAL (DRAWER) DA TELA 08 -->
+        <div id="sideDrawerOverlay" onclick="toggleSideDrawer(false)" class="hidden absolute inset-0 bg-slate-900/40 backdrop-blur-[1px] z-40 transition-opacity"></div>
+        <div id="sideDrawer" class="absolute top-0 bottom-0 left-0 w-64 bg-white z-50 shadow-2xl transform -translate-x-full transition-transform duration-200 flex flex-col justify-between p-5 border-r border-slate-100">
+          <div>
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div class="flex items-center gap-2.5">
+                <div id="drawerUserInitials" class="w-10 h-10 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center font-bold border border-pink-200">L</div>
+                <div>
+                  <p id="drawerUserName" class="text-sm font-bold text-slate-900">Leitor</p>
+                  <p class="text-[11px] text-slate-500">Leitor(a) da Biblioteca</p>
+                </div>
+              </div>
+              <button onclick="toggleSideDrawer(false)" class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500">✕</button>
+            </div>
+            <nav class="mt-4 flex flex-col gap-1.5 text-sm font-medium">
+              <button onclick="toggleSideDrawer(false); goToScreen(8)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-left">
+                <span>🏠</span> Início
+              </button>
+              <button onclick="toggleSideDrawer(false); goToScreen(9)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 text-left">
+                <span>🗂️</span> Categorias
+              </button>
+              <button onclick="toggleSideDrawer(false); goToScreen(10)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 text-left">
+                <span>📚</span> Acervo Completo
+              </button>
+              <button onclick="toggleSideDrawer(false); goToScreen(12)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 text-left">
+                <span>🔖</span> Meus Livros
+              </button>
+              <button onclick="toggleSideDrawer(false); goToScreen(16)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 text-left">
+                <span>📢</span> Informativos da Escola
+              </button>
+              <button onclick="toggleSideDrawer(false); goToScreen(15)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 text-left">
+                <span>👤</span> Meu Perfil
+              </button>
+            </nav>
+          </div>
+          <button onclick="logoutUser()" class="flex items-center gap-2 px-3 py-2.5 rounded-xl text-rose-600 hover:bg-rose-50 text-sm font-semibold">
+            <span>🚪</span> Sair da conta
+          </button>
+        </div>
+
+        <!-- MODAL INTERNO (LEITURA SIMULADA / CONFIGURAÇÕES / AJUDA) -->
+        <div id="internalModal" class="hidden absolute inset-0 z-50 bg-slate-900/50 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-4">
+          <div id="internalModalCard" class="bg-white w-full rounded-3xl p-5 shadow-2xl border border-slate-100 animate-screen max-h-[85%] overflow-y-auto">
+            <!-- Preenchido dinamicamente -->
+          </div>
+        </div>
+
+        <!-- ÁREA PRINCIPAL DE CONTEÚDO DA TELA ATIVA -->
+        <div id="screenContainer" class="flex-1 overflow-y-auto phone-scroll relative">
+          <!-- Renderizado via JavaScript -->
+        </div>
+
+        <!-- BARRA DE NAVEGAÇÃO INFERIOR FIXA (Telas 08 a 17) -->
+        <nav id="bottomNav" class="hidden bg-white border-t border-slate-200/80 px-2 py-2 grid grid-cols-4 gap-1 shrink-0 z-20">
+          <button onclick="goToScreen(8)" id="nav-home" class="flex flex-col items-center justify-center py-1 rounded-2xl transition-colors">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/>
+            </svg>
+            <span class="text-[11px] font-semibold">Início</span>
+          </button>
+          <button onclick="goToScreen(9)" id="nav-categories" class="flex flex-col items-center justify-center py-1 rounded-2xl transition-colors">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h4a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h4a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+            </svg>
+            <span class="text-[11px] font-semibold">Categorias</span>
+          </button>
+          <button onclick="goToScreen(12)" id="nav-mybooks" class="flex flex-col items-center justify-center py-1 rounded-2xl transition-colors">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+            <span class="text-[11px] font-semibold">Meus Livros</span>
+          </button>
+          <button onclick="goToScreen(15)" id="nav-profile" class="flex flex-col items-center justify-center py-1 rounded-2xl transition-colors">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            <span class="text-[11px] font-semibold">Perfil</span>
+          </button>
+        </nav>
+
+        <!-- Barra Home Indicator inferior -->
+        <div class="h-4 bg-transparent flex items-center justify-center shrink-0">
+          <div class="w-28 h-1 bg-slate-300 rounded-full"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // =========================================================================
+    // BANCO DE DADOS E ESTADO INICIAL DO APLICATIVO (FIEL AO PDF DE 17 PÁGINAS)
+    // =========================================================================
+    const INITIAL_STATE = {
+      currentScreen: 1,
+      wireframeMode: false,
+      user: {
+        name: "",
+        shortName: "Leitor",
+        email: "",
+        indicatedBy: "",
+        heardFrom: ""
+      },
+      searchHome: "",
+      searchCategory: "",
+      searchCatalog: "",
+      selectedCategoryFilter: "Todos",
+      selectedBookId: "1984",
+      selectedNoticeId: 1,
+      booksCatalog: [
+        {
+          id: "culpa-estrelas",
+          title: "A Culpa é das Estrelas",
+          author: "John Green",
+          rating: "4,9",
+          reviews: "18.420 avaliações",
+          category: "Romance",
+          tags: ["Romance", "Drama", "Juvenil"],
+          coverTheme: "from-sky-400 to-blue-600",
+          coverBadge: "☁️✨",
+          synopsis: "Hazel Grace Lancaster e Augustus Waters são dois adolescentes que se conhecem em um grupo de apoio para pacientes com câncer. Unidos pelo humor ácido e pelo amor aos livros, eles embarcam em uma jornada inesquecível sobre a vida e o amor."
+        },
+        {
+          id: "1984",
+          title: "1984",
+          author: "George Orwell",
+          rating: "4,8",
+          reviews: "13.570 avaliações",
+          category: "Educação",
+          tags: ["Distopia", "Romance", "Drama", "Juvenil"],
+          coverTheme: "from-amber-500 via-rose-600 to-slate-900",
+          coverBadge: "👁️ 1984",
+          synopsis: "Publicado em 1949, quando o ano de 1984 pertencia a um futuro relativamente distante, tem como herói o angustiado Winston Smith, refém de um mundo feito de opressão absoluta. Em Oceania, ter uma mente livre é considerado crime gravíssimo, pois o Grande Irmão (Big Brother), líder simbólico do Partido, controla tudo e todos e está sempre de olho em você."
+        },
+        {
+          id: "orgulho-preconceito",
+          title: "Orgulho e Preconceito",
+          author: "Jane Austen",
+          rating: "4,9",
+          reviews: "21.110 avaliações",
+          category: "Romance",
+          tags: ["Clássico", "Romance", "Drama"],
+          coverTheme: "from-rose-400 to-pink-700",
+          coverBadge: "💌🕊️",
+          synopsis: "Na Inglaterra do século XIX, Elizabeth Bennet precisa lidar com as pressões sociais pelo casamento e com o orgulhoso Sr. Darcy, descobrindo que as primeiras impressões nem sempre revelam a verdade."
+        },
+        {
+          id: "pequeno-principe",
+          title: "O Pequeno Príncipe",
+          author: "Antoine de Saint-Exupéry",
+          rating: "4,9",
+          reviews: "32.890 avaliações",
+          category: "Fantasia",
+          tags: ["Fábula", "Filosofia", "Juvenil"],
+          coverTheme: "from-amber-300 via-yellow-500 to-indigo-800",
+          coverBadge: "👑🌹🪐",
+          synopsis: "Um piloto cai com seu avião no deserto do Saara e encontra um pequeno príncipe vindo do asteroide B-612. Através de suas histórias, redescobrimos o verdadeiro valor da amizade e do essencial invisível aos olhos."
+        },
+        {
+          id: "harry-potter",
+          title: "Harry Potter e a Pedra Filosofal",
+          author: "J.K. Rowling",
+          rating: "4,9",
+          reviews: "41.205 avaliações",
+          category: "Fantasia",
+          tags: ["Fantasia", "Aventura", "Juvenil"],
+          coverTheme: "from-indigo-700 via-purple-800 to-amber-600",
+          coverBadge: "⚡🏰🦉",
+          synopsis: "Ao completar onze anos, Harry Potter descobre que é um bruxo e recebe uma carta para estudar na Escola de Magia e Bruxaria de Hogwarts, onde faz amigos leais e enfrenta mistérios ligados ao seu passado."
+        }
+      ],
+      categories: [
+        { name: "Livros", count: "10.245 livros", icon: "📚", color: "bg-emerald-100 text-emerald-700" },
+        { name: "Entretenimento", count: "5.376 livros", icon: "🎭", color: "bg-amber-100 text-amber-700" },
+        { name: "Educação", count: "2.891 livros", icon: "🎓", color: "bg-blue-100 text-blue-800" },
+        { name: "Tecnologia", count: "1.203 livros", icon: "💻", color: "bg-cyan-100 text-cyan-800" },
+        { name: "Romance", count: "4.982 livros", icon: "💖", color: "bg-pink-100 text-pink-700" },
+        { name: "Fantasia", count: "3.654 livros", icon: "🐉", color: "bg-purple-100 text-purple-700" },
+        { name: "Suspense", count: "2.317 livros", icon: "🕵️", color: "bg-slate-200 text-slate-800" }
+      ],
+      readingList: [
+        { id: "1984", title: "1984", author: "George Orwell", progress: 0 },
+        { id: "harry-potter", title: "Harry Potter e a Pedra Filosofal", author: "J.K. Rowling", progress: 45 },
+        { id: "pequeno-principe", title: "O Pequeno Príncipe", author: "Antoine de Saint-Exupéry", progress: 12 }
+      ],
+      readList: [
+        { title: "O Hobbit", author: "J.R.R. Tolkien", rating: "5/5", date: "12/07/2026" },
+        { title: "O Lado Feio do Amor", author: "Colleen Hoover", rating: "4,5/5", date: "28/05/2026" },
+        { title: "O Fantasma da Ópera", author: "Gaston Leroux", rating: "5/5", date: "15/04/2026" },
+        { title: "Memórias Póstumas de Brás Cubas", author: "Machado de Assis", rating: "5/5", date: "08/03/2026" }
+      ],
+      favoritesList: [
+        { title: "It: A Coisa", author: "Stephen King", favorite: true },
+        { title: "O Iluminado", author: "Stephen King", favorite: true },
+        { title: "Coraline", author: "Neil Gaiman", favorite: true },
+        { title: "A Torre Negra", author: "Stephen King", favorite: true }
+      ],
+      notices: [
+        {
+          id: 1,
+          badge: "Aviso Importante",
+          title: "Horário de funcionamento",
+          summary: "A biblioteca estará aberta normalmente durante o feriado.",
+          fullText: "Informamos a todos os alunos, professores e colaboradores que a Biblioteca Escolar Ana Teles funcionará em horário normal (das 07h30 às 17h30) durante o próximo feriado prolongado, garantindo espaço tranquilo para estudos, pesquisas e retirada de exemplares.",
+          date: "Atualizado hoje • 09:00",
+          icon: "🕒"
+        },
+        {
+          id: 2,
+          badge: "Novos Livros",
+          title: "Chegada de novos títulos de Literatura e Ficção",
+          summary: "Mais de 120 obras novas já estão disponíveis para consulta e empréstimo.",
+          fullText: "O acervo digital e físico da Biblioteca Ana Teles acaba de receber novos exemplares de ficção científica, clássicos brasileiros e literatura juvenil. Acesse a aba Categorias para reservar o seu!",
+          date: "14/11/2026",
+          icon: "✨"
+        },
+        {
+          id: 3,
+          badge: "Regras de Empréstimo",
+          title: "Prazo de devolução e renovação online",
+          summary: "Alunos podem renovar empréstimos escolares por até 15 dias pelo app.",
+          fullText: "Cada estudante pode manter até 3 livros simultaneamente por um período de 15 dias corridos, com direito a uma renovação digital diretamente na seção Meus Livros antes da data de vencimento.",
+          date: "10/11/2026",
+          icon: "📋"
+        }
+      ]
+    };
+
+    let state = JSON.parse(JSON.stringify(INITIAL_STATE));
+    let toastTimer = null;
+
+    // =========================================================================
+    // UTILITÁRIOS DE UI E FEEDBACK (SEM ALERT)
+    // =========================================================================
+    function showToast(message, icon = "✓") {
+      const toast = document.getElementById("phoneToast");
+      document.getElementById("toastMessage").textContent = message;
+      document.getElementById("toastIcon").textContent = icon;
+      toast.classList.remove("opacity-0", "-translate-y-3");
+      toast.classList.add("opacity-100", "translate-y-0");
+
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("opacity-100", "translate-y-0");
+        toast.classList.add("opacity-0", "-translate-y-3");
+      }, 2800);
+    }
+
+    function setWireframeMode(enabled) {
+      state.wireframeMode = enabled;
+      const phoneInner = document.getElementById("phoneInner");
+      const btnPolished = document.getElementById("btnPolished");
+      const btnWireframe = document.getElementById("btnWireframe");
+      const badge = document.getElementById("modeBadge");
+
+      if (enabled) {
+        phoneInner.classList.add("wireframe-mode");
+        btnWireframe.classList.add("bg-amber-500", "text-slate-950", "shadow");
+        btnWireframe.classList.remove("text-slate-300");
+        btnPolished.classList.remove("bg-emerald-600", "text-white", "shadow");
+        btnPolished.classList.add("text-slate-300");
+        badge.textContent = "Wireframe Baixa Fidelidade";
+        badge.className = "text-[11px] font-medium px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300";
+      } else {
+        phoneInner.classList.remove("wireframe-mode");
+        btnPolished.classList.add("bg-emerald-600", "text-white", "shadow");
+        btnPolished.classList.remove("text-slate-300");
+        btnWireframe.classList.remove("bg-amber-500", "text-slate-950", "shadow");
+        btnWireframe.classList.add("text-slate-300");
+        badge.textContent = "Alta Fidelidade";
+        badge.className = "text-[11px] font-medium px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300";
+      }
+      renderScreen();
+    }
+
+    function toggleSideDrawer(open) {
+      const overlay = document.getElementById("sideDrawerOverlay");
+      const drawer = document.getElementById("sideDrawer");
+      if (open) {
+        overlay.classList.remove("hidden");
+        drawer.classList.remove("-translate-x-full");
+      } else {
+        overlay.classList.add("hidden");
+        drawer.classList.add("-translate-x-full");
+      }
+    }
+
+    function openModal(htmlContent) {
+      const modal = document.getElementById("internalModal");
+      const card = document.getElementById("internalModalCard");
+      card.innerHTML = htmlContent;
+      modal.classList.remove("hidden");
+    }
+
+    function closeModal() {
+      document.getElementById("internalModal").classList.add("hidden");
+    }
+
+    function resetAppState() {
+      const keepWireframe = state.wireframeMode;
+      state = JSON.parse(JSON.stringify(INITIAL_STATE));
+      state.wireframeMode = keepWireframe;
+      closeModal();
+      toggleSideDrawer(false);
+      goToScreen(1);
+      showToast("Protótipo restaurado ao estado inicial!", "↺");
+    }
+
+    // =========================================================================
+    // NAVEGAÇÃO ENTRE AS 17 TELAS
+    // =========================================================================
+    function goToScreen(num) {
+      state.currentScreen = Math.max(1, Math.min(17, num));
+
+      // Sincronizar horários da barra de status com as páginas do PDF
+      const timeMap = {
+        1: "9:00", 2: "9:00", 3: "9:00",
+        4: "9:01", 5: "9:01", 6: "9:01", 7: "9:01",
+        8: "9:02", 9: "9:01", 10: "9:03", 11: "9:03",
+        12: "9:04", 13: "9:04", 14: "9:05", 15: "9:05",
+        16: "9:06", 17: "9:06"
+      };
+      document.getElementById("statusBarTime").textContent = timeMap[state.currentScreen] || "9:00";
+
+      // Atualizar controles externos
+      const screenJumpSelect = document.getElementById("screenJumpSelect");
+      if (screenJumpSelect) screenJumpSelect.value = String(state.currentScreen);
+      const currentScreenTag = document.getElementById("currentScreenTag");
+      if (currentScreenTag) currentScreenTag.textContent = `Tela ${String(state.currentScreen).padStart(2, "0")} / 17`;
+      updateGridHighlights();
+
+      // Mostrar/ocultar barra de navegação inferior (telas 08 a 17)
+      const bottomNav = document.getElementById("bottomNav");
+      if (state.currentScreen >= 8) {
+        bottomNav.classList.remove("hidden");
+        updateBottomNavActive();
+      } else {
+        bottomNav.classList.add("hidden");
+      }
+
+      // Resetar scroll para o topo
+      const container = document.getElementById("screenContainer");
+      container.scrollTop = 0;
+      renderScreen();
+    }
+
+    function prevScreen() {
+      if (state.currentScreen > 1) goToScreen(state.currentScreen - 1);
+    }
+
+    function nextScreen() {
+      if (state.currentScreen < 17) goToScreen(state.currentScreen + 1);
+    }
+
+    function updateBottomNavActive() {
+      const s = state.currentScreen;
+      const items = {
+        "nav-home": s === 8,
+        "nav-categories": s === 9 || s === 10 || s === 11,
+        "nav-mybooks": s === 12 || s === 13 || s === 14,
+        "nav-profile": s === 15 || s === 16 || s === 17
+      };
+      Object.entries(items).forEach(([id, active]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (active) {
+          el.classList.add("text-emerald-600", "bg-emerald-50/80");
+          el.classList.remove("text-slate-400", "hover:text-slate-600");
+        } else {
+          el.classList.remove("text-emerald-600", "bg-emerald-50/80");
+          el.classList.add("text-slate-400", "hover:text-slate-600");
+        }
+      });
+    }
+
+    function buildScreenGridButtons() {
+      const grid = document.getElementById("screenGridButtons");
+      if (!grid) return;
+      grid.innerHTML = Array.from({ length: 17 }, (_, i) => {
+        const num = i + 1;
+        return `<button id="gridBtn-${num}" onclick="goToScreen(${num})" class="py-1.5 rounded-lg text-xs font-bold border transition">${String(num).padStart(2, "0")}</button>`;
+      }).join("");
+      updateGridHighlights();
+    }
+
+    function updateGridHighlights() {
+      for (let i = 1; i <= 17; i++) {
+        const btn = document.getElementById(`gridBtn-${i}`);
+        if (!btn) continue;
+        if (i === state.currentScreen) {
+          btn.className = "py-1.5 rounded-lg text-xs font-bold border border-emerald-400 bg-emerald-600 text-white shadow";
+        } else {
+          btn.className = "py-1.5 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-500 hover:text-white";
+        }
+      }
+    }
+
+    // =========================================================================
+    // COMPONENTES REUTILIZÁVEIS (LOGO LIVRO ABERTO, CAPAS, AVATARES)
+    // =========================================================================
+    function renderBookLogo(sizeClass = "w-20 h-20") {
+      return `
+        <div class="${sizeClass} rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center shadow-lg shadow-emerald-600/25 wf-accent-green mx-auto">
+          <svg class="w-11 h-11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.5C10.5 5.2 8.2 4.5 5.5 4.5C4.1 4.5 3 4.8 3 4.8V18.5C3 18.5 4.1 18.2 5.5 18.2C8.2 18.2 10.5 18.9 12 20.2M12 6.5C13.5 5.2 15.8 4.5 18.5 4.5C19.9 4.5 21 4.8 21 4.8V18.5C21 18.5 19.9 18.2 18.5 18.2C15.8 18.2 13.5 18.9 12 20.2M12 6.5V20.2"/>
+          </svg>
+        </div>
+      `;
+    }
+
+    function renderAylaAvatar(size = "w-24 h-24") {
+      return `
+        <div class="${size} rounded-full bg-gradient-to-tr from-pink-500 via-rose-400 to-amber-300 p-1 shadow-lg shadow-pink-500/20 mx-auto wf-accent-pink">
+          <div class="w-full h-full rounded-full bg-pink-50 flex flex-col items-center justify-center relative overflow-hidden">
+            <div class="w-8 h-8 rounded-full bg-pink-500/90 mb-1"></div>
+            <div class="w-14 h-7 rounded-t-full bg-pink-500/90 -mb-2"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBookCover(book, dimensions = "w-14 h-20") {
+      return `
+        <div class="book-cover-art ${dimensions} rounded-xl bg-gradient-to-br ${book.coverTheme} text-white p-1.5 flex flex-col justify-between shadow-md shrink-0 select-none relative overflow-hidden">
+          <span class="text-[8px] font-extrabold uppercase tracking-wider opacity-90 leading-tight line-clamp-2">${book.title}</span>
+          <span class="text-xs self-center">${book.coverBadge}</span>
+          <span class="text-[7px] opacity-80 truncate">${book.author}</span>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // RENDERIZAÇÃO DAS 17 TELAS DO PROTÓTIPO
+    // =========================================================================
+    function renderScreen() {
+      const container = document.getElementById("screenContainer");
+      const s = state.currentScreen;
+
+      switch (s) {
+        // ---------------------------------------------------------------------
+        // TELA 01: BOAS-VINDAS / SPLASH
+        // ---------------------------------------------------------------------
+        case 1:
+          container.innerHTML = `
+            <div class="min-h-full flex flex-col justify-between px-7 py-10 text-center animate-screen bg-gradient-to-b from-emerald-50/90 via-white to-slate-50">
+              <div class="pt-6">
+                <span class="inline-block px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 wf-box">
+                  Escola Estadual Ana Teles
+                </span>
+              </div>
+
+              <div class="my-auto flex flex-col items-center">
+                ${renderBookLogo("w-24 h-24")}
+                <h1 class="mt-7 text-3xl font-extrabold text-indigo-950 tracking-tight leading-tight">
+                  Biblioteca Virtual<br/>
+                  <span class="text-emerald-600">Ana Teles</span>
+                </h1>
+                <p class="mt-4 text-sm text-slate-600 leading-relaxed max-w-[270px]">
+                  Aqui você encontra milhares de livros, em um único lugar. Leia, aprenda, descubra novos mundos.
+                </p>
+              </div>
+
+              <div class="pb-2">
+                <button onclick="goToScreen(2)" class="wf-primary-btn w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-emerald-600/30 transition">
+                  Começar
+                </button>
+              </div>
+            </div>
+          `;
+          break;
+
+        // ---------------------------------------------------------------------
+        // TELA 02: LOGIN
+        // ---------------------------------------------------------------------
+        case 2:
+          container.innerHTML = `
+            <div class="min-h-full flex flex-col justify-between px-6 py-6 animate-screen">
+              <div>
+                <div class="mt-2 mb-5 text-center">
+                  ${renderBookLogo("w-14 h-14")}
+                  <h2 class="mt-4 text-2xl font-extrabold text-slate-900">Login</h2>
+                  <p class="text-xs text-slate-500 mt-1">Acesse sua conta para continuar</p>
+                </div>
+
+                <form onsubmit="event.preventDefault(); loginUser();" class="space-y-3.5">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail:</label>
+                    <input id="loginEmail" type="email" value="${state.user.email}" placeholder="Digite o seu e-mail" required
+                      class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 shadow-sm" />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Senha:</label>
+                    <input id="loginPassword" type="password" placeholder="Digite sua senha" required
+                      class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 shadow-sm" />
+                  </div>
+
+                  <div class="flex items-center justify-between text-xs pt-0.5">
+                    <label class="inline-flex items-center gap-2 text-slate-600 cursor-pointer select-none">
+                      <input type="checkbox" checked class="rounded text-emerald-600 focus:ring-emerald-500" />
+                      <span>Lembrar-me</span>
+                    </label>
+                    <button type="button" onclick="goToScreen(3)" class="font-semibold text-indigo-900 hover:underline">
+                      Esqueceu a senha?
+                    </button>
+                  </div>
+
+                  <button type="submit" class="wf-primary-btn w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/25 transition mt-2">
+                    Entrar
+                  </button>
+                </form>
+
+                <!-- Divisor Social -->
+                <div class="my-5 flex items-center gap-3">
+                  <div class="h-px bg-slate-200 flex-1"></div>
+                  <span class="text-[11px] font-medium text-slate-400">ou conecte-se com</span>
+                  <div class="h-px bg-slate-200 flex-1"></div>
+                </div>
+
+                <!-- Botões Sociais G e f -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div aria-hidden="true" class="wf-card flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700 shadow-sm select-none">
+                    <span class="w-5 h-5 rounded-full bg-rose-500 text-white text-xs flex items-center justify-center font-extrabold">G</span>
+                    <span>Google</span>
+                  </div>
+                  <div aria-hidden="true" class="wf-card flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700 shadow-sm select-none">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-extrabold">f</span>
+                    <span>Facebook</span>
+                  </div>
+                </div>
+              </div>
+
+              <p class="text-center text-xs text-slate-600 pt-4">
+                Não possui uma conta?
+                <button onclick="goToScreen(4)" class="font-bold text-emerald-600 hover:underline ml-0.5">Cadastre-se</button>
+              </p>
+            </div>
+          `;
+          break;
+
+        // ---------------------------------------------------------------------
+        // TELA 03: RECUPERAR SENHA
+        // ---------------------------------------------------------------------
+        case 3:
+          container.innerHTML = `
+            <div class="min-h-full flex flex-col justify-between px-6 py-6 animate-screen">
+              <div>
+                <div class="mt-2 mb-5 text-center">
+                  ${renderBookLogo("w-14 h-14")}
+                  <h2 class="mt-4 text-2xl font-extrabold text-slate-900">Recuperar Senha</h2>
+                  <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                    Informe seus dados para que possamos verificar sua conta e enviar um novo acesso.
+                  </p>
+                </div>
+
+                <form onsubmit="event.preventDefault(); recoverPassword();" class="space-y-3.5 mt-4">
+                  <div class="relative">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">CPF</label>
+                    <div class="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-sm wf-box">
+                      <span class="text-slate-400 mr-2.5 text-sm">👤</span>
+                      <input type="text" placeholder="000.000.000-00" required class="w-full text-sm bg-transparent focus:outline-none text-slate-800" />
+                    </div>
+                  </div>
+
+                  <div class="relative">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Número de telefone (com DDD)</label>
+                    <div class="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-sm wf-box">
+                      <span class="text-slate-400 mr-2.5 text-sm">📱</span>
+                      <input type="tel" placeholder="(91) 90000-0000" required class="w-full text-sm bg-transparent focus:outline-none text-slate-800" />
+                    </div>
+                  </div>
+
+                  <div class="relative">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail cadastrado</label>
+                    <div class="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-sm wf-box">
+                      <span class="text-slate-400 mr-2.5 text-sm">✉️</span>
+                      <input id="recoveryEmail" type="email" placeholder="seuemail@escola.com" required class="w-full text-sm bg-transparent focus:outline-none text-slate-800" />
+                    </div>
+                  </div>
+
+                  <button type="submit" class="wf-primary-btn w-full py-3.5 rounded-2xl bg-indigo-900 hover:bg-indigo-800 text-white font-bold text-sm shadow-md transition mt-3">
+                    Enviar
+                  </button>
+                </form>
+              </div>
+
+              <div class="text-center pb-2">
+                <button onclick="goToScreen(2)" class="text-xs font-bold text-indigo-900 hover:underline">
+                  ← Voltar para o login
+                </button>
+              </div>
+            </div>
+          `;
+          break;
+
+        // ---------------------------------------------------------------------
+        // TELA 04: CADASTRO
+        // ---------------------------------------------------------------------
+        case 4:
+          container.innerHTML = `
+            <div class="min-h-full flex flex-col justify-between px-6 py-5 animate-screen">
+              <div>
+                <div class="mb-4">
+                  <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 wf-box">Novo Leitor</span>
+                  <h2 class="mt-2 text-2xl font-extrabold text-slate-900">Cadastro</h2>
+                  <p class="text-xs text-slate-500 mt-0.5">Crie sua conta e comece agora mesmo!</p>
+                </div>
+
+                <form onsubmit="event.preventDefault(); registerUser();" class="space-y-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nome:</label>
+                    <input id="registerName" type="text" value="${state.user.name}" oninput="state.user.name = this.value; state.user.shortName = this.value.split(' ')[0] || 'Leitor';" required
+                      class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 shadow-sm" />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail:</label>
+                    <input id="registerEmail" type="email" value="${state.user.email}" oninput="state.user.email = this.value;" required
+                      class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 shadow-sm" />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Senha:</label>
+                    <input id="registerPassword" type="password" placeholder="Crie uma senha" required
+                      class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 shadow-sm" />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Confirme a senha:</label>
+                    <input id="registerPasswordConfirm" type="password" placeholder="Repita a senha" required
+                      class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 shadow-sm" />
+                  </div>
+
+                  <button type="submit" class="wf-primary-btn w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/25 transition mt-2">
+                    Cadastrar
+                  </button>
+                </form>
+              </div>
+
+              <p class="text-center text-xs text-slate-600 pt-3">
+                Já possui uma conta?
+                <button onclick="goToScreen(2)" class="font-bold text-emerald-600 hover:underline ml-0.5">Fazer login</button>
+              </p>
+            </div>
+          `;
+          break;
+
+        // ---------------------------------------------------------------------
+        // TELAS 05, 06 e 07: ONBOARDING / PESQUISA DE PERFIL
+        // ---------------------------------------------------------------------
+        case 5:
+        case 6:
+        case 7: {
+          const indicatedOptions = ["Amigos", "Familiar", "Escola", "Influenciador digital", "Outros"];
+          const heardOptions = ["Instagram", "TikTok", "Facebook", "YouTube", "WhatsApp", "Indicação de amigos", "Outros"];
+          const showIndicatedDropdown = s === 6;
+          const showHeardDropdown = s === 7;
+
+          container.innerHTML = `
+            <div class="min-h-full flex flex-col justify-between px-6 py-5 animate-screen">
+              <div>
+                <!-- Cabeçalho com Avatar -->
+                <div class="text-center mt-1 mb-5">
+                  ${renderAylaAvatar("w-20 h-20")}
+                  <h2 class="mt-3 text-xl font-extrabold text-slate-900">${state.user.name}</h2>
+                  <p class="text-xs font-semibold text-pink-600 mt-0.5">Protagonista da sua própria história!</p>
+                </div>
+
+                <div class="space-y-3.5">
+                  <!-- E-mail -->
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Informe seu e-mail:</label>
+                    <input type="email" value="${state.user.email}" readonly
+                      class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-sm text-slate-700 font-medium" />
+                  </div>
+
+                  <!-- Seletor 1: Como foi indicado ao site por? (Destaque na Tela 06) -->
+                  <div class="relative">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Como foi indicado ao site por?</label>
+                    <button type="button" onclick="goToScreen(${s === 6 ? 5 : 6})"
+                      class="wf-card w-full px-3.5 py-2.5 rounded-xl bg-white border ${showIndicatedDropdown ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'} text-sm text-left flex items-center justify-between shadow-sm">
+                      <span class="${state.user.indicatedBy ? 'text-slate-900 font-medium' : 'text-slate-400'}">
+                        ${state.user.indicatedBy || 'Selecione uma opção'}
+                      </span>
+                      <span class="text-xs text-slate-500">${showIndicatedDropdown ? '▲' : '▼'}</span>
+                    </button>
+
+                    ${showIndicatedDropdown ? `
+                      <div class="wf-card mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-20">
+                        ${indicatedOptions.map(opt => `
+                          <button type="button" onclick="state.user.indicatedBy='${opt}'; goToScreen(5);"
+                            class="w-full px-4 py-2 text-left text-xs font-medium flex items-center gap-2.5 hover:bg-emerald-50 transition ${state.user.indicatedBy === opt ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-700'}">
+                            <span class="w-2 h-2 rounded-full ${state.user.indicatedBy === opt ? 'bg-emerald-600' : 'bg-slate-300'}"></span>
+                            <span>${opt}</span>
+                          </button>
+                        `).join("")}
+                      </div>
+                    ` : ""}
+                  </div>
+
+                  <!-- Seletor 2: Como ficou sabendo? (Destaque na Tela 07) -->
+                  <div class="relative">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Como ficou sabendo?</label>
+                    <button type="button" onclick="goToScreen(${s === 7 ? 5 : 7})"
+                      class="wf-card w-full px-3.5 py-2.5 rounded-xl bg-white border ${showHeardDropdown ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'} text-sm text-left flex items-center justify-between shadow-sm">
+                      <span class="${state.user.heardFrom ? 'text-slate-900 font-medium' : 'text-slate-400'}">
+                        ${state.user.heardFrom || 'Selecione uma opção'}
+                      </span>
+                      <span class="text-xs text-slate-500">${showHeardDropdown ? '▲' : '▼'}</span>
+                    </button>
+
+                    ${showHeardDropdown ? `
+                      <div class="wf-card mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-20 max-h-48 overflow-y-auto">
+                        ${heardOptions.map(opt => `
+                          <button type="button" onclick="state.user.heardFrom='${opt}'; goToScreen(5);"
+                            class="w-full px-4 py-2 text-left text-xs font-medium flex items-center gap-2.5 hover:bg-emerald-50 transition ${state.user.heardFrom === opt ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-700'}">
+                            <span class="w-2 h-2 rounded-full ${state.user.heardFrom === opt ? 'bg-emerald-600' : 'bg-slate-300'}"></span>
+                            <span>${opt}</span>
+                          </button>
+                        `).join("")}
+                      </div>
+                    ` : ""}
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-4">
+                <button onclick="showToast('Preferências salvas com sucesso!'); goToScreen(8);"
+                  class="wf-primary-btn w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/25 transition">
+                  Salvar
+                </button>
+              </div>
+            </div>
+          `;
+          break;
+        }
+
+        // ---------------------------------------------------------------------
+        // TELA 08: INÍCIO / HOME
+        // ---------------------------------------------------------------------
+        case 8: {
+          const homeQuery = state.searchHome.trim().toLowerCase();
+          const quickMatches = homeQuery
+            ? state.booksCatalog.filter(b => b.title.toLowerCase().includes(homeQuery) || b.author.toLowerCase().includes(homeQuery))
+            : [];
+
+          container.innerHTML = `
+            <div class="px-5 py-4 space-y-5 animate-screen">
+              <!-- Topo com Menu Hambúrguer e Avatar -->
+              <div class="flex items-center justify-between">
+                <button onclick="toggleSideDrawer(true)" class="wf-card p-2.5 rounded-xl bg-white border border-slate-200/80 text-slate-700 shadow-sm hover:bg-slate-50" aria-label="Menu">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h12"/>
+                  </svg>
+                </button>
+                <button onclick="goToScreen(15)" class="flex items-center gap-2 bg-pink-50 border border-pink-200/80 px-2.5 py-1 rounded-full wf-accent-pink">
+                  <span id="headerUserInitials" class="w-6 h-6 rounded-full bg-pink-500 text-white text-[11px] font-bold flex items-center justify-center">${getUserInitials()}</span>
+                  <span class="text-xs font-bold text-pink-800">${state.user.shortName}</span>
+                </button>
+              </div>
+
+              <!-- Saudação -->
+              <div>
+                <h1 class="text-2xl font-extrabold text-slate-900 leading-tight">
+                  Olá, ${state.user.shortName}! 👋<br/>
+                  <span class="text-emerald-600">Seja Bem-Vinda!</span>
+                </h1>
+              </div>
+
+              <!-- Barra de Busca em Tempo Real -->
+              <div class="relative">
+                <div class="wf-card flex items-center bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 shadow-sm focus-within:border-emerald-500">
+                  <svg class="w-4 h-4 text-slate-400 mr-2.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+                  </svg>
+                  <input type="text" value="${state.searchHome}" oninput="state.searchHome = this.value; renderScreen();"
+                    placeholder="Buscar livros, autores..."
+                    class="w-full text-xs sm:text-sm bg-transparent focus:outline-none text-slate-800" />
+                  ${state.searchHome ? `<button onclick="state.searchHome=''; renderScreen();" class="text-xs text-slate-400 hover:text-slate-600 ml-1">✕</button>` : ""}
+                </div>
+
+                <!-- Resultados instantâneos da busca na Home -->
+                ${homeQuery ? `
+                  <div class="wf-card mt-2 bg-white border border-slate-200 rounded-2xl shadow-lg p-2 space-y-1.5">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2">Resultados (${quickMatches.length})</p>
+                    ${quickMatches.length ? quickMatches.map(b => `
+                      <button onclick="state.selectedBookId='${b.id}'; goToScreen(11);" class="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-emerald-50 text-left transition">
+                        ${renderBookCover(b, "w-9 h-12")}
+                        <div class="min-w-0 flex-1">
+                          <p class="text-xs font-bold text-slate-900 truncate">${b.title}</p>
+                          <p class="text-[11px] text-slate-500 truncate">${b.author}</p>
+                        </div>
+                        <span class="text-xs font-bold text-emerald-600">Ver →</span>
+                      </button>
+                    `).join("") : `<p class="text-xs text-slate-500 px-2 py-2">Nenhum livro encontrado para "${state.searchHome}".</p>`}
+                  </div>
+                ` : ""}
+              </div>
+
+              <!-- Banner Destaque -->
+              <div class="wf-accent-green relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-emerald-700 p-5 text-white shadow-lg">
+                <div class="relative z-10 max-w-[215px]">
+                  <span class="inline-block px-2 py-0.5 rounded-md bg-amber-400/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                    Leitura Escolar
+                  </span>
+                  <h2 class="text-lg font-extrabold leading-snug">
+                    Desperte novos mundos através da leitura!
+                  </h2>
+                  <button onclick="goToScreen(10)" class="mt-3 px-3.5 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs shadow hover:bg-amber-300 transition">
+                    Explorar Acervo
+                  </button>
+                </div>
+                <div class="absolute -right-3 -bottom-3 text-7xl opacity-25 select-none">📖</div>
+              </div>
+
+              <!-- Seção Categoria + Ver todas -->
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-base font-extrabold text-slate-900">Categoria</h3>
+                  <button onclick="goToScreen(9)" class="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-0.5">
+                    Ver todas <span>›</span>
+                  </button>
+                </div>
+
+                <!-- 4 Atalhos Visuais do PDF -->
+                <div class="grid grid-cols-2 gap-3">
+                  <button onclick="goToScreen(10)" class="wf-card bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-emerald-400 transition flex items-center gap-3 text-left">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg shrink-0 wf-accent-green">📚</div>
+                    <div>
+                      <p class="text-xs font-extrabold text-slate-900">Livros</p>
+                      <p class="text-[10px] text-slate-500">10.245 títulos</p>
+                    </div>
+                  </button>
+
+                  <button onclick="showToast('Acervo Multimídia e Audiolivros aberto!'); goToScreen(10);" class="wf-card bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-amber-400 transition flex items-center gap-3 text-left">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg shrink-0 wf-accent-amber">🎧</div>
+                    <div>
+                      <p class="text-xs font-extrabold text-slate-900">Multimídia</p>
+                      <p class="text-[10px] text-slate-500">Áudio & Vídeo</p>
+                    </div>
+                  </button>
+
+                  <button onclick="showToast('Seção de Revistas Escolares!'); goToScreen(10);" class="wf-card bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-pink-400 transition flex items-center gap-3 text-left">
+                    <div class="w-10 h-10 rounded-xl bg-pink-100 text-pink-700 flex items-center justify-center text-lg shrink-0 wf-accent-pink">📰</div>
+                    <div>
+                      <p class="text-xs font-extrabold text-slate-900">Revistas</p>
+                      <p class="text-[10px] text-slate-500">Periódicos</p>
+                    </div>
+                  </button>
+
+                  <button onclick="showToast('Repositório de Artigos e Trabalhos!'); goToScreen(10);" class="wf-card bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-indigo-400 transition flex items-center gap-3 text-left">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center text-lg shrink-0 wf-box">📝</div>
+                    <div>
+                      <p class="text-xs font-extrabold text-slate-900 leading-tight">Artigos e Trabalhos</p>
+                      <p class="text-[10px] text-slate-500">Pesquisas</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+          break;
+        }
+
+        // ---------------------------------------------------------------------
+        // TELA 09: CATEGORIAS
+        // ---------------------------------------------------------------------
+        case 9: {
+          const catQuery = state.searchCategory.trim().toLowerCase();
+          const filteredCats = state.categories.filter(c => c.name.toLowerCase().includes(catQuery));
+
+          container.innerHTML = `
+            <div class="px-5 py-4 space-y-4 animate-screen">
+              <div class="flex items-center gap-3">
+                <button onclick="goToScreen(8)" class="wf-card w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 shadow-sm">←</button>
+                <h1 class="text-xl font-extrabold text-slate-900">Categorias</h1>
+              </div>
+
+              <!-- Barra Pesquisar categoria -->
+              <div class="wf-card flex items-center bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 shadow-sm">
+                <span class="text-slate-400 mr-2.5 text-sm">🔍</span>
+                <input type="text" value="${state.searchCategory}" oninput="state.searchCategory = this.value; renderScreen();"
+                  placeholder="Pesquisar categoria..."
+                  class="w-full text-xs sm:text-sm bg-transparent focus:outline-none text-slate-800" />
+              </div>
+
+              <!-- Lista Interativa com Contagens Exatas do PDF -->
+              <div class="space-y-2.5 pb-2">
+                ${filteredCats.map(cat => `
+                  <button onclick="state.selectedCategoryFilter='${cat.name}'; goToScreen(10);"
+                    class="wf-card w-full bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-emerald-500 transition flex items-center justify-between text-left group">
+                    <div class="flex items-center gap-3.5">
+                      <div class="w-11 h-11 rounded-xl ${cat.color} flex items-center justify-center text-xl wf-box">
+                        ${cat.icon}
+                      </div>
+                      <div>
+                        <p class="text-sm font-extrabold text-slate-900 group-hover:text-emerald-700 transition">${cat.name}</p>
+                        <p class="text-xs font-medium text-slate-500">${cat.count}</p>
+                      </div>
+                    </div>
+                    <span class="w-8 h-8 rounded-full bg-slate-50 group-hover:bg-emerald-50 text-slate-400 group-hover:text-emerald-600 flex items-center justify-center font-bold transition">
+                      ›
+                    </span>
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+          `;
+          break;
+        }
+
+        // ---------------------------------------------------------------------
+        // TELA 10: CATÁLOGO DE LIVROS (5 LIVROS EXATOS DO PDF)
+        // ---------------------------------------------------------------------
+        case 10: {
+          const q = state.searchCatalog.trim().toLowerCase();
+          const filteredBooks = state.booksCatalog.filter(b =>
+            b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)
+          );
+
+          container.innerHTML = `
+            <div class="px-5 py-4 space-y-4 animate-screen">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <button onclick="goToScreen(9)" class="wf-card w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 shadow-sm">←</button>
+                  <div>
+                    <h1 class="text-xl font-extrabold text-slate-900">Livros</h1>
+                    <p class="text-[11px] text-slate-500">Acervo selecionado • Biblioteca Ana Teles</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Busca em tempo real -->
+              <div class="wf-card flex items-center bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 shadow-sm">
+                <span class="text-slate-400 mr-2.5 text-sm">🔍</span>
+                <input type="text" value="${state.searchCatalog}" oninput="state.searchCatalog = this.value; renderScreen();"
+                  placeholder="Pesquisar livro..."
+                  class="w-full text-xs sm:text-sm bg-transparent focus:outline-none text-slate-800" />
+              </div>
+
+              <!-- Lista dos 5 livros com capas ilustradas e botão Consultar -->
+              <div class="space-y-3 pb-2">
+                ${filteredBooks.map(book => `
+                  <div onclick="state.selectedBookId='${book.id}'; goToScreen(11);"
+                    class="wf-card bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm hover:border-emerald-500 transition flex items-center justify-between gap-3 cursor-pointer">
+                    <div class="flex items-center gap-3 min-w-0">
+                      ${renderBookCover(book, "w-14 h-20")}
+                      <div class="min-w-0">
+                        <h3 class="text-sm font-extrabold text-slate-900 leading-snug line-clamp-2">${book.title}</h3>
+                        <p class="text-xs text-slate-500 mt-0.5 truncate">${book.author}</p>
+                        <div class="mt-2 flex items-center gap-2">
+                          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold text-[11px] wf-accent-green">
+                            Consultar ›
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          `;
+          break;
+        }
+
+        // ---------------------------------------------------------------------
+        // TELA 11: DETALHES DO LIVRO (PADRÃO: 1984 DE GEORGE ORWELL)
+        // ---------------------------------------------------------------------
+        case 11: {
+          const book = state.booksCatalog.find(b => b.id === state.selectedBookId) || state.booksCatalog[1];
+          const alreadyAdded = state.readingList.some(item => item.id === book.id);
+
+          container.innerHTML = `
+            <div class="px-5 py-4 space-y-4 animate-screen">
+              <!-- Topo -->
+              <div class="flex items-center justify-between">
+                <button onclick="goToScreen(10)" class="wf-card w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 shadow-sm">←</button>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Detalhes do Livro</span>
+                <button onclick="toggleFavoriteByTitle('${book.title.replace(/'/g, "\\'")}', '${book.author.replace(/'/g, "\\'")}')" class="wf-card w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-pink-500 shadow-sm">
+                  ♥
+                </button>
+              </div>
+
+              <!-- Capa e Informações Principais -->
+              <div class="wf-card bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col items-center text-center">
+                ${renderBookCover(book, "w-28 h-40")}
+                <h1 class="mt-3.5 text-xl font-extrabold text-slate-900">${book.title}</h1>
+                <p class="text-xs font-semibold text-slate-500 mt-0.5">${book.author}</p>
+
+                <!-- Avaliação 4,8 (13.570 avaliações) -->
+                <div class="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/80 wf-accent-amber">
+                  <span class="text-amber-500 text-xs">★★★★★</span>
+                  <span class="text-xs font-extrabold text-slate-900">${book.rating}</span>
+                  <span class="text-[11px] text-slate-500">(${book.reviews})</span>
+                </div>
+
+                <!-- Botões Interativos: Ler agora e + Adicionar aos meus livros -->
+                <div class="mt-4 w-full space-y-2">
+                  <button onclick="openReaderModal('${book.id}')"
+                    class="wf-primary-btn w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/25 transition">
+                    📖 Ler agora
+                  </button>
+                  <button onclick="addBookToReadingList('${book.id}')"
+                    class="wf-card w-full py-2.5 rounded-2xl ${alreadyAdded ? 'bg-indigo-50 text-indigo-900 border-indigo-200' : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-50'} border font-bold text-xs transition">
+                    ${alreadyAdded ? '✓ Já está em Meus Livros' : '+ Adicionar aos meus livros'}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Sinopse -->
+              <div class="wf-card bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm space-y-2">
+                <h2 class="text-sm font-extrabold text-slate-900">Sinopse</h2>
+                <p class="text-xs text-slate-600 leading-relaxed text-justify">
+                  ${book.synopsis}
+                </p>
+
+                <!-- Tags (Distopia, Romance, Drama, Juvenil) -->
+                <div class="pt-2 flex flex-wrap gap-1.5">
+                  ${book.tags.map(tag => `
+                    <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 wf-box">
+                      ${tag}
+                    </span>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+          `;
+          break;
+        }
+
+        // ---------------------------------------------------------------------
+        // TELAS 12, 13 E 14: MEUS LIVROS (ABAS: LENDO, LIDOS, FAVORITOS)
+        // ---------------------------------------------------------------------
+        case 12:
+        case 13:
+        case 14: {
+          const activeTab = s === 12 ? "lendo" : s === 13 ? "lidos" : "favoritos";
+
+          container.innerHTML = `
+            <div class="px-5 py-4 space-y-4 animate-screen">
+              <div class="flex items-center justify-between">
+                <h1 class="text-xl font-extrabold text-slate-900">Meus Livros</h1>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 wf-accent-green">
+                  Estante Digital
+                </span>
+              </div>
+
+              <!-- Abas Funcionais: Lendo | Lidos | Favoritos -->
+              <div class="wf-card grid grid-cols-3 gap-1 bg-slate-200/70 p-1 rounded-2xl">
+                <button onclick="goToScreen(12)" class="py-2 rounded-xl text-xs font-bold transition ${activeTab === 'lendo' ? 'bg-white text-emerald-700 shadow-sm wf-primary-btn' : 'text-slate-600'}">
+                  Lendo (${state.readingList.length})
+                </button>
+                <button onclick="goToScreen(13)" class="py-2 rounded-xl text-xs font-bold transition ${activeTab === 'lidos' ? 'bg-white text-emerald-700 shadow-sm wf-primary-btn' : 'text-slate-600'}">
+                  Lidos (${state.readList.length})
+                </button>
+                <button onclick="goToScreen(14)" class="py-2 rounded-xl text-xs font-bold transition ${activeTab === 'favoritos' ? 'bg-white text-emerald-700 shadow-sm wf-primary-btn' : 'text-slate-600'}">
+                  Favoritos (${state.favoritesList.filter(f => f.favorite).length})
+                </button>
+              </div>
+
+              <!-- CONTEÚDO ABA LENDO (TELA 12) -->
+              ${activeTab === "lendo" ? `
+                <div class="space-y-3">
+                  ${state.readingList.map((item, idx) => {
+                    const catalogMatch = state.booksCatalog.find(b => b.id === item.id) || state.booksCatalog[1];
+                    return `
+                      <div class="wf-card bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2.5">
+                        <div class="flex items-center gap-3">
+                          ${renderBookCover(catalogMatch, "w-12 h-16")}
+                          <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-extrabold text-slate-900 truncate">${item.title}</h3>
+                            <p class="text-xs text-slate-500 truncate">${item.author}</p>
+                            <div class="flex items-center justify-between mt-1.5">
+                              <span class="text-[11px] font-bold text-emerald-700">Progresso: ${item.progress}%</span>
+                              <button onclick="updateReadingProgress(${idx}, 15)" class="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 wf-box">
+                                + Ler página
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+                          <div class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: ${item.progress}%"></div>
+                        </div>
+                      </div>
+                    `;
+                  }).join("")}
+
+                  <button onclick="goToScreen(10)" class="wf-primary-btn w-full py-3 rounded-2xl bg-indigo-900 hover:bg-indigo-800 text-white font-bold text-xs shadow-md transition">
+                    + Adicionar livro
+                  </button>
+                </div>
+              ` : ""}
+
+              <!-- CONTEÚDO ABA LIDOS (TELA 13) -->
+              ${activeTab === "lidos" ? `
+                <div class="space-y-2.5">
+                  ${state.readList.map(item => `
+                    <div class="wf-card bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
+                      <div class="min-w-0">
+                        <h3 class="text-sm font-extrabold text-slate-900 leading-snug">${item.title}</h3>
+                        <p class="text-xs text-slate-500">${item.author}</p>
+                        <p class="text-[11px] text-emerald-700 font-semibold mt-1">✓ Lido em ${item.date}</p>
+                      </div>
+                      <div class="px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-extrabold text-xs shrink-0 wf-accent-amber">
+                        ⭐ ${item.rating}
+                      </div>
+                    </div>
+                  `).join("")}
+                </div>
+              ` : ""}
+
+              <!-- CONTEÚDO ABA FAVORITOS (TELA 14) -->
+              ${activeTab === "favoritos" ? `
+                <div class="space-y-2.5">
+                  ${state.favoritesList.map((item, idx) => `
+                    <div class="wf-card bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
+                      <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-12 rounded-xl bg-gradient-to-br from-slate-800 to-rose-900 text-white flex items-center justify-center text-sm font-bold shrink-0 book-cover-art">
+                          📕
+                        </div>
+                        <div class="min-w-0">
+                          <h3 class="text-sm font-extrabold text-slate-900 truncate">${item.title}</h3>
+                          <p class="text-xs text-slate-500 truncate">${item.author}</p>
+                        </div>
+                      </div>
+                      <button onclick="toggleFavoriteItem(${idx})"
+                        class="w-9 h-9 rounded-full ${item.favorite ? 'bg-pink-100 text-pink-600' : 'bg-slate-100 text-slate-400'} flex items-center justify-center text-base transition wf-accent-pink"
+                        aria-label="Favoritar">
+                        ${item.favorite ? '♥' : '♡'}
+                      </button>
+                    </div>
+                  `).join("")}
+                </div>
+              ` : ""}
+            </div>
+          `;
+          break;
+        }
+
+        // ---------------------------------------------------------------------
+        // TELA 15: MEU PERFIL
+        // ---------------------------------------------------------------------
+        case 15: {
+          const readCount = state.readList.length;
+          const readingCount = state.readingList.length;
+          const favCount = state.favoritesList.filter(f => f.favorite).length;
+
+          container.innerHTML = `
+            <div class="px-5 py-4 space-y-4 animate-screen">
+              <h1 class="text-xl font-extrabold text-slate-900 text-center">Meu Perfil</h1>
+
+              <!-- Avatar Rosa Estilizado e Dados -->
+              <div class="text-center">
+                ${renderAylaAvatar("w-20 h-20")}
+                <h2 class="mt-2.5 text-lg font-extrabold text-slate-900">${state.user.shortName}</h2>
+                <p class="text-xs text-slate-500">${state.user.email}</p>
+              </div>
+
+              <!-- Contadores Dinâmicos (4 Livros lidos, 3 Em andamento, 4 Favoritos) -->
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="goToScreen(13)" class="wf-card bg-white p-2.5 rounded-2xl border border-slate-200/80 text-center shadow-sm hover:border-emerald-400 transition">
+                  <p class="text-lg font-extrabold text-emerald-600">${readCount}</p>
+                  <p class="text-[10px] font-semibold text-slate-600 leading-tight">Livros lidos</p>
+                </button>
+                <button onclick="goToScreen(12)" class="wf-card bg-white p-2.5 rounded-2xl border border-slate-200/80 text-center shadow-sm hover:border-amber-400 transition">
+                  <p class="text-lg font-extrabold text-amber-500">${readingCount}</p>
+                  <p class="text-[10px] font-semibold text-slate-600 leading-tight">Em andamento</p>
+                </button>
+                <button onclick="goToScreen(14)" class="wf-card bg-white p-2.5 rounded-2xl border border-slate-200/80 text-center shadow-sm hover:border-pink-400 transition">
+                  <p class="text-lg font-extrabold text-pink-600">${favCount}</p>
+                  <p class="text-[10px] font-semibold text-slate-600 leading-tight">Favoritos</p>
+                </button>
+              </div>
+
+              <!-- Lista de Opções Clicáveis -->
+              <div class="wf-card bg-white rounded-3xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
+                <button onclick="goToScreen(13)" class="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 text-left transition">
+                  <div class="flex items-center gap-3">
+                    <span class="text-base">📜</span>
+                    <span class="text-xs font-bold text-slate-800">Histórico de leitura</span>
+                  </div>
+                  <span class="text-slate-400 font-bold">›</span>
+                </button>
+
+                <button onclick="goToScreen(14)" class="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 text-left transition">
+                  <div class="flex items-center gap-3">
+                    <span class="text-base">💖</span>
+                    <span class="text-xs font-bold text-slate-800">Favoritos</span>
+                  </div>
+                  <span class="text-slate-400 font-bold">›</span>
+                </button>
+
+                <button onclick="goToScreen(16)" class="w-full px-4 py-3 flex items-center justify-between hover:bg-emerald-50/60 text-left transition">
+                  <div class="flex items-center gap-3">
+                    <span class="text-base">📢</span>
+                    <div>
+                      <p class="text-xs font-bold text-slate-900">Informativos</p>
+                      <p class="text-[10px] text-slate-500">Novidades e avisos da biblioteca</p>
+                    </div>
+                  </div>
+                  <span class="text-emerald-600 font-bold">›</span>
+                </button>
+
+                <button onclick="openSettingsModal()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 text-left transition">
+                  <div class="flex items-center gap-3">
+                    <span class="text-base">⚙️</span>
+                    <span class="text-xs font-bold text-slate-800">Configurações</span>
+                  </div>
+                  <span class="text-slate-400 font-bold">›</span>
+                </button>
+
+                <button onclick="openHelpModal()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 text-left transition">
+                  <div class="flex items-center gap-3">
+                    <span class="text-base">❓</span>
+                    <span class="text-xs font-bold text-slate-800">Ajuda</span>
+                  </div>
+                  <span class="text-slate-400 font-bold">›</span>
+                </button>
+
+                <button onclick="logoutUser()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-rose-50 text-left transition">
+                  <div class="flex items-center gap-3">
+                    <span class="text-base">🚪</span>
+                    <span class="text-xs font-bold text-rose-600">Sair</span>
+                  </div>
+                  <span class="text-rose-400 font-bold">›</span>
+                </button>
+              </div>
+            </div>
+          `;
+          break;
+        }
+
+        // ---------------------------------------------------------------------
+        // TELAS 16 E 17: INFORMATIVOS DA BIBLIOTECA
+        // ---------------------------------------------------------------------
+        case 16:
+        case 17: {
+          const activeNotice = state.notices.find(n => n.id === state.selectedNoticeId) || state.notices[0];
+
+          container.innerHTML = `
+            <div class="px-5 py-4 space-y-4 animate-screen">
+              <div class="flex items-center gap-3">
+                <button onclick="goToScreen(${s === 17 ? 16 : 15})" class="wf-card w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 shadow-sm">←</button>
+                <h1 class="text-xl font-extrabold text-slate-900">Informativos</h1>
+              </div>
+
+              <!-- Card Introdutório do PDF -->
+              <div class="wf-accent-green rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-700 p-4 text-white shadow-md">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-lg">🏫</span>
+                  <h2 class="text-sm font-extrabold">Mural Biblioteca Ana Teles</h2>
+                </div>
+                <p class="text-xs text-emerald-50 leading-relaxed">
+                  Aqui você encontra dados importantes sobre a biblioteca, como novos livros, avisos e atualizações.
+                </p>
+              </div>
+
+              ${s === 16 ? `
+                <!-- Lista de Informativos (Tela 16) -->
+                <div class="space-y-3 pb-2">
+                  ${state.notices.map(notice => `
+                    <div onclick="state.selectedNoticeId=${notice.id}; goToScreen(17);"
+                      class="wf-card bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-emerald-500 transition cursor-pointer space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold wf-accent-amber">
+                          ${notice.icon} ${notice.badge}
+                        </span>
+                        <span class="text-[10px] text-slate-400">${notice.date}</span>
+                      </div>
+                      <h3 class="text-sm font-extrabold text-slate-900">${notice.title}</h3>
+                      <p class="text-xs text-slate-600 leading-relaxed">${notice.summary}</p>
+                      <p class="text-[11px] font-bold text-emerald-600 pt-1">Ler comunicado completo ›</p>
+                    </div>
+                  `).join("")}
+                </div>
+              ` : `
+                <!-- Detalhes do Informativo Selecionado (Tela 17) -->
+                <div class="wf-card bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 text-xs font-bold wf-accent-amber">
+                      ${activeNotice.icon} ${activeNotice.badge}
+                    </span>
+                    <span class="text-[11px] text-slate-400">${activeNotice.date}</span>
+                  </div>
+                  <h2 class="text-lg font-extrabold text-slate-900 leading-snug">${activeNotice.title}</h2>
+                  <p class="text-xs font-semibold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-100 wf-box">
+                    "${activeNotice.summary}"
+                  </p>
+                  <p class="text-xs text-slate-600 leading-relaxed text-justify">
+                    ${activeNotice.fullText}
+                  </p>
+                  <div class="pt-2">
+                    <button onclick="goToScreen(16)" class="wf-primary-btn w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs">
+                      Ver todos os informativos
+                    </button>
+                  </div>
+                </div>
+              `}
+            </div>
+          `;
+          break;
+        }
+      }
+    }
+
+    // =========================================================================
+    // AÇÕES INTERATIVAS DE LIVROS, FAVORITOS E MODAIS
+    // =========================================================================
+    function addBookToReadingList(bookId) {
+      const book = state.booksCatalog.find(b => b.id === bookId);
+      if (!book) return;
+      const exists = state.readingList.some(item => item.id === book.id);
+      if (exists) {
+        showToast(`"${book.title}" já está na sua lista Lendo!`, "📚");
+        goToScreen(12);
+        return;
+      }
+      state.readingList.unshift({
+        id: book.id,
+        title: book.title,
+        author: book.author,
+        progress: 5
+      });
+      showToast(`"${book.title}" adicionado a Meus Livros!`, "✓");
+      renderScreen();
+    }
+
+    function updateReadingProgress(index, delta) {
+      const item = state.readingList[index];
+      if (!item) return;
+      item.progress = Math.min(100, item.progress + delta);
+      if (item.progress === 100) {
+        showToast(`Parabéns! Você concluiu "${item.title}"!`, "🎉");
+      } else {
+        showToast(`Progresso atualizado para ${item.progress}%`, "📖");
+      }
+      renderScreen();
+    }
+
+    function toggleFavoriteItem(index) {
+      const item = state.favoritesList[index];
+      if (!item) return;
+      item.favorite = !item.favorite;
+      showToast(item.favorite ? `Adicionado aos favoritos!` : `Removido dos favoritos`, item.favorite ? "♥" : "♡");
+      renderScreen();
+    }
+
+    function toggleFavoriteByTitle(title, author) {
+      const existingIdx = state.favoritesList.findIndex(f => f.title === title);
+      if (existingIdx >= 0) {
+        state.favoritesList[existingIdx].favorite = !state.favoritesList[existingIdx].favorite;
+        showToast(state.favoritesList[existingIdx].favorite ? `"${title}" favoritado!` : `"${title}" removido dos favoritos`, "♥");
+      } else {
+        state.favoritesList.unshift({ title, author, favorite: true });
+        showToast(`"${title}" adicionado aos favoritos!`, "♥");
+      }
+      renderScreen();
+    }
+
+    function openReaderModal(bookId) {
+      const book = state.booksCatalog.find(b => b.id === bookId) || state.booksCatalog[1];
+      let readingItem = state.readingList.find(r => r.id === book.id);
+      if (!readingItem) {
+        readingItem = { id: book.id, title: book.title, author: book.author, progress: 10 };
+        state.readingList.unshift(readingItem);
+      }
+
+      openModal(`
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Leitor Digital Ana Teles</span>
+              <h3 class="text-base font-extrabold text-slate-900">${book.title}</h3>
+            </div>
+            <button onclick="closeModal(); renderScreen();" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold">✕</button>
+          </div>
+
+          <div class="bg-amber-50/70 border border-amber-200/70 rounded-2xl p-4 text-xs text-slate-800 leading-relaxed font-serif space-y-2">
+            <p class="font-bold text-slate-900">Capítulo 1 — Trecho de Leitura</p>
+            <p>"${book.synopsis}"</p>
+            <p class="text-slate-600 italic">Continue deslizando para registrar seu avanço automático na estante escolar.</p>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span>Progresso de leitura</span>
+              <span id="modalProgressVal" class="text-emerald-600">${readingItem.progress}%</span>
+            </div>
+            <input type="range" min="0" max="100" value="${readingItem.progress}"
+              oninput="document.getElementById('modalProgressVal').textContent = this.value + '%'; setBookProgress('${book.id}', Number(this.value));"
+              class="w-full accent-emerald-600" />
+          </div>
+
+          <button onclick="closeModal(); goToScreen(12);" class="w-full py-3 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow">
+            Salvar progresso e ir para Meus Livros
+          </button>
+        </div>
+      `);
+    }
+
+    function setBookProgress(bookId, val) {
+      const item = state.readingList.find(r => r.id === bookId);
+      if (item) item.progress = val;
+    }
+
+    function openSettingsModal() {
+      openModal(`
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 class="text-base font-extrabold text-slate-900">⚙️ Configurações</h3>
+            <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold">✕</button>
+          </div>
+          <div class="space-y-3 text-xs">
+            <label class="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+              <span class="font-semibold text-slate-800">Notificações de devolução escolar</span>
+              <input type="checkbox" checked class="accent-emerald-600 w-4 h-4" />
+            </label>
+            <label class="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+              <span class="font-semibold text-slate-800">Avisos de novos livros no acervo</span>
+              <input type="checkbox" checked class="accent-emerald-600 w-4 h-4" />
+            </label>
+            <label class="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+              <span class="font-semibold text-slate-800">Sincronização offline de leitura</span>
+              <input type="checkbox" class="accent-emerald-600 w-4 h-4" />
+            </label>
+          </div>
+          <button onclick="closeModal(); showToast('Configurações atualizadas!');" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs">
+            Concluir
+          </button>
+        </div>
+      `);
+    }
+
+    function openHelpModal() {
+      openModal(`
+        <div class="space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 class="text-base font-extrabold text-slate-900">❓ Central de Ajuda</h3>
+            <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold">✕</button>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Precisa de suporte com seu cadastro escolar ou empréstimo na <strong>Biblioteca Escolar Ana Teles</strong>?
+          </p>
+          <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs text-emerald-900 space-y-1">
+            <p class="font-bold">Atendimento Presencial e Digital:</p>
+            <p>Segunda a Sexta • 07h30 às 17h30</p>
+            <p>E-mail: biblioteca@anateles.edu.br</p>
+          </div>
+          <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-indigo-900 text-white font-bold text-xs">
+            Entendi
+          </button>
+        </div>
+      `);
+    }
+
+    // =========================================================================
+    // INICIALIZAÇÃO
+    // =========================================================================
+    async function loginUser() {
+      if (!window.supabaseClient) {
+        showToast("O serviço de autenticação não está configurado.", "!");
+        return;
+      }
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+      try {
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+        if (error) {
+          showToast(error.message === "Invalid login credentials"
+            ? "E-mail ou senha incorretos."
+            : error.message, "!");
+          return;
+        }
+        applyAuthenticatedUser(data.user);
+        showToast("Bem-vinda de volta, " + state.user.shortName + "!", "✓");
+        goToScreen(8);
+      } catch (error) {
+        showToast("Erro ao conectar com o servidor.", "!");
+      }
+    }
+
+    async function registerUser() {
+      if (!window.supabaseClient) {
+        showToast("O serviço de autenticação não está configurado.", "!");
+        return;
+      }
+      const name = document.getElementById("registerName").value;
+      const email = document.getElementById("registerEmail").value;
+      const password = document.getElementById("registerPassword").value;
+      const passwordConfirm = document.getElementById("registerPasswordConfirm").value;
+      if (password !== passwordConfirm) {
+        showToast("As senhas nao coincidem.", "!");
+        return;
+      }
+      try {
+        const { data, error } = await window.supabaseClient.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { name },
+            emailRedirectTo: window.location.origin
+          }
+        });
+        if (error) {
+          showToast(error.message, "!");
+          return;
+        }
+        if (data.user && data.session) {
+          applyAuthenticatedUser(data.user);
+          showToast("Conta criada com sucesso!", "✓");
+          goToScreen(5);
+        } else {
+          showToast("Conta criada. Confira seu e-mail para confirmar o cadastro.", "✉️");
+          goToScreen(2);
+        }
+      } catch (error) {
+        showToast("Erro ao conectar com o servidor.", "!");
+      }
+    }
+
+    function applyAuthenticatedUser(user) {
+      const metadata = user.user_metadata || {};
+      const email = user.email || "";
+      const name = (metadata.name || metadata.full_name || email.split("@")[0] || "Leitor").trim();
+      state.user.name = name;
+      state.user.shortName = name.split(" ")[0];
+      state.user.email = email;
+      document.getElementById("drawerUserName").textContent = name;
+      const initials = getUserInitials();
+      document.getElementById("drawerUserInitials").textContent = initials;
+      const headerInitials = document.getElementById("headerUserInitials");
+      if (headerInitials) headerInitials.textContent = initials;
+    }
+
+    function getUserInitials() {
+      return (state.user.name || "Leitor").trim().split(/\s+/).filter(Boolean)
+        .slice(0, 2).map(part => part[0]).join("").toUpperCase();
+    }
+
+    async function recoverPassword() {
+      if (!window.supabaseClient) {
+        showToast("O serviço de autenticação não está configurado.", "!");
+        return;
+      }
+      const email = document.getElementById("recoveryEmail").value;
+      if (!email) return;
+      const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin
+      });
+      if (error) {
+        showToast(error.message, "!");
+        return;
+      }
+      showToast("Link de recuperação enviado para seu e-mail.", "✉️");
+    }
+
+    async function logoutUser() {
+      if (window.supabaseClient) {
+        await window.supabaseClient.auth.signOut();
+      }
+      toggleSideDrawer(false);
+      showToast("Sessão encerrada.", "✓");
+      goToScreen(2);
+    }
+
+    async function syncSupabaseSession() {
+      if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY ||
+          typeof window.supabase === "undefined") {
+        return;
+      }
+      window.supabaseClient = window.supabase.createClient(
+        window.SUPABASE_URL,
+        window.SUPABASE_ANON_KEY
+      );
+      const { data } = await window.supabaseClient.auth.getSession();
+      if (data.session?.user) {
+        applyAuthenticatedUser(data.session.user);
+        return true;
+      }
+      window.supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          applyAuthenticatedUser(session.user);
+          if (event === "SIGNED_IN") goToScreen(8);
+        }
+      });
+      return false;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      buildScreenGridButtons();
+      syncSupabaseSession().then(hasSession => {
+        goToScreen(hasSession ? 8 : 1);
+      }).catch(() => {
+        goToScreen(1);
+      });
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/static/sw.js").catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>

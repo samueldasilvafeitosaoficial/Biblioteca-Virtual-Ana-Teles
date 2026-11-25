@@ -1,0 +1,8 @@
+{
+  "appId": "br.edu.anateles.bibliotecavirtual",
+  "appName": "Biblioteca Ana Teles",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
